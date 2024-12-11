@@ -1,7 +1,7 @@
 [project]
-name = "spotify-client"
+name = "kids_box"
 version = "0.1.0"
-description = "Add your description here"
+description = "A lot of experiments in creating a kds_box"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -9,5 +9,7 @@ dependencies = [
     "jinja2>=3.1.4",
     "python-dotenv>=1.0.1",
     "requests>=2.32.3",
-    "spotipy>=2.24.0",
 ]
+
+[project.scripts]
+kids_box = "kids_box.app:run"

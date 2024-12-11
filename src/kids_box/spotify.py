@@ -1,19 +1,11 @@
 import json
 import os
-from typing import Annotated, Any
+from typing import Any
 
 import requests
-import spotipy
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from spotipy.oauth2 import SpotifyPKCE
 
 _ = load_dotenv()
-
-app = FastAPI()
 
 SPOTIFY_REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI')
 SPOTIFY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
@@ -23,77 +15,12 @@ SPOTIFY_SCOPE = (
     "user-read-currently-playing user-read-playback-state user-modify-playback-state"
 )
 
-sp = spotipy.Spotify(auth_manager=SpotifyPKCE(scope=SPOTIFY_SCOPE))
-
 # Global variables for token storage
 access_token: str | None = None
 refresh_token: str | None = None
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-templates = Jinja2Templates(directory="templates")
-
-
-@app.get("/", response_class=HTMLResponse)
-def handle_root(request: Request):
-    if not is_authenticated():
-        return RedirectResponse(url="/auth")
-
-    return templates.TemplateResponse(request=request, name="index.html")
-
-
-@app.get("/devices", response_class=HTMLResponse)
-async def handle_devices(request: Request):
-    devices = get_devices()
-
-    ctx = {
-            "devices": [{"name": d["name"], "id": d["id"]} for d in devices],
-            "request": request
-            }
-
-    return templates.TemplateResponse(name="devices.html", context=ctx)
-
-@app.post("/play", response_class=HTMLResponse)
-async def handle_play(device: Annotated[str, Form()]):
-    print(device)
-    try:
-        start_song(device)
-    except Exception as e:
-        return HTMLResponse(f"Could not start {e}")
-
-    return HTMLResponse("Started!")
-
-
-@app.get("/auth")
-async def auth():
-    authorize_url = f"https://accounts.spotify.com/authorize?client_id={SPOTIFY_CLIENT_ID}&response_type=code&redirect_uri={SPOTIFY_REDIRECT_URI}&scope={SPOTIFY_SCOPE}"
-    return HTMLResponse(content=f'<a href="{authorize_url}">Authorize Spotify</a>')
-
-
-@app.get("/callback", response_class=RedirectResponse)
-async def callback(request: Request):
-    global access_token, refresh_token
-    code = request.query_params.get("code")
-
-    if not code:
-        return RedirectResponse(status_code=500, url="/")
-
-    # Exchange code for tokens
-    token_data = await exchange_code_for_tokens(code)
-
-    # Store tokens securely
-    access_token = token_data["access_token"]
-    refresh_token = token_data["refresh_token"]
-
-    assert access_token is not None
-    assert refresh_token is not None
-
-    # Save tokens to file (for demonstration purposes only)
-    save_tokens_to_file(access_token, refresh_token)
-
-    return RedirectResponse(url="/")
-
-
+with open("tokens.txt", "r") as file:
+    refresh_token = file.readline().strip('\n')
 
 async def exchange_code_for_tokens(code: str) -> dict[str, str]:
     url = "https://accounts.spotify.com/api/token"
@@ -123,11 +50,25 @@ async def exchange_code_for_tokens(code: str) -> dict[str, str]:
     except ValueError as e:
         raise Exception(f"Failed to parse JSON: {e}")
 
+async def parse_tokens(code: str) -> None:
+    # Exchange code for tokens
+    token_data = await exchange_code_for_tokens(code)
 
-def save_tokens_to_file(access_token: str | None, refresh_token: str | None):
+    # Store tokens securely
+    access_token = token_data["access_token"]
+    refresh_token = token_data["refresh_token"]
+
+    assert access_token is not None
+    assert refresh_token is not None
+
+    # Save tokens to file (for demonstration purposes only)
+    save_tokens_to_file(refresh_token)
+
+
+
+def save_tokens_to_file(refresh_token: str | None):
     with open("tokens.txt", "w") as file:
-        _ = file.write(f"Access Token: {access_token}\n")
-        _ = file.write(f"Refresh Token: {refresh_token}")
+        _ = file.write(f"{refresh_token}")
 
 
 def refresh_access_token():
@@ -192,6 +133,12 @@ def start_song(device_id: str):
 
     if not response.status_code == 204:
         raise Exception(f"Could not start track: Status code: {response.status_code}: {response.text}")
+
+def get_authorize_url() -> str:
+    authorize_url = f"https://accounts.spotify.com/authorize?client_id={SPOTIFY_CLIENT_ID}&response_type=code&redirect_uri={SPOTIFY_REDIRECT_URI}&scope={SPOTIFY_SCOPE}"
+
+    return authorize_url
+
 
 
 def is_authenticated() -> bool:
