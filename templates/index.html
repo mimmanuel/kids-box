@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Play Aqua</title>
+        <script src="https://unpkg.com/htmx.org@2.0.3" integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq" crossorigin="anonymous"></script>
+    </head>
+
+    <body>
+        <h1>Welcome to this page!</h1>
+        <div>
+            <form hx-post="/play" hx-target="#play-status">
+                <select name="device" id="device" 
+                     hx-get="/devices" 
+                     hx-trigger="load" 
+                     hx-target="this" 
+                     hx-swap="innerHTML">
+                </select>
+                <button type="submit">Play</a>
+            </form>
+        </div>
+        <div id="play-status">
+        </div>
+    </body>
+
+</html>
