@@ -3,7 +3,7 @@ name = "kids_box"
 version = "0.1.0"
 description = "A lot of experiments in creating a kds_box"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 dependencies = [
     "fastapi[standard]>=0.115.5",
     "jinja2>=3.1.4",
