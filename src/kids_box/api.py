@@ -10,35 +10,35 @@ from fastapi.templating import Jinja2Templates
 from kids_box.spotify import get_authorize_url, get_devices, parse_tokens, start_song, is_authenticated
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Create a task that runs in the background
-    task = asyncio.create_task(background_task())
-    
-    try:
-        yield
-    finally:
-        # Cancel the task when the application shuts down
-        _ = task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     # Create a task that runs in the background
+#     task = asyncio.create_task(background_task())
+#
+#     try:
+#         yield
+#     finally:
+#         # Cancel the task when the application shuts down
+#         _ = task.cancel()
+#         try:
+#             await task
+#         except asyncio.CancelledError:
+#             pass
+#
+# async def background_task():
+#     count = 0
+#     try:
+#         while True:
+#             print(count)
+#             await asyncio.sleep(5)
+#             count = count + 1
+#             if count > 600:
+#                 break
+#     except asyncio.CancelledError:
+#         print("Background task was cancelled")
 
-async def background_task():
-    count = 0
-    try:
-        while True:
-            print(count)
-            await asyncio.sleep(5)
-            count = count + 1
-            if count > 600:
-                break
-    except asyncio.CancelledError:
-        print("Background task was cancelled")
 
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
